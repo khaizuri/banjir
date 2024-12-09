@@ -20,36 +20,79 @@
             <div class="card">
                 <h2>Total Mangsa</h2>
                 <div class="stat" id="totalMangsa">Loading...</div>
+                <div class="stat-details">
+                    <div class="stat-item">
+                        <small>Masuk</small>
+                        <div id="mangsaMasuk">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <small>Balik</small>
+                        <div id="mangsaBalik">-</div>
+                    </div>
+                </div>
             </div>
             <div class="card">
                 <h2>Jumlah PPS</h2>
                 <div class="stat" id="totalPPS">Loading...</div>
+                <div class="stat-details">
+                    <div class="stat-item">
+                        <small>Aktif</small>
+                        <div id="ppsAktif">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <small>Tutup</small>
+                        <div id="ppsTutup">-</div>
+                    </div>
+                </div>
             </div>
             <div class="card">
                 <h2>Jumlah Keluarga</h2>
                 <div class="stat" id="totalKeluarga">Loading...</div>
+                <div class="stat-details">
+                    <div class="stat-item">
+                        <small>Masuk</small>
+                        <div id="keluargaMasuk">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <small>Balik</small>
+                        <div id="keluargaBalik">-</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="trendsChart"></canvas>
+        <div class="chart-section">
+            <div class="chart-container">
+                <h2>Trend Aliran Masuk</h2>
+                <canvas id="trendMasukChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Trend Aliran Balik</h2>
+                <canvas id="trendBalikChart"></canvas>
+            </div>
         </div>
 
-        <div class="data-table">
-            <h2>Data by Location</h2>
-            <table id="locationTable">
-                <thead>
-                    <tr>
-                        <th>Location</th>
-                        <th>PPS</th>
-                        <th>Mangsa</th>
-                        <th>Keluarga</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Data will be populated by JavaScript -->
-                </tbody>
-            </table>
+        <div class="table-section">
+            <div class="data-table">
+                <h2>PPS Aktif</h2>
+                <div class="table-container">
+                    <table id="ppsTable">
+                        <thead>
+                            <tr>
+                                <th>Negeri</th>
+                                <th>Daerah</th>
+                                <th>Nama PPS</th>
+                                <th>Mangsa</th>
+                                <th>Keluarga</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
 

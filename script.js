@@ -24,8 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('about').scrollIntoView({ behavior: 'smooth' });
     });
 
-    // API URL
-    const API_URL = 'https://infobencanajkmv2.jkm.gov.my/api/data-dashboard-aliran-trend.php?a=0&b=1&seasonmain_id=208&seasonnegeri_id=';
+    // API URLs
+    const API_URLS = {
+        trendMasuk: 'https://infobencanajkmv2.jkm.gov.my/api/data-dashboard-aliran-trend-masuk.php?a=0&b=1&seasonmain_id=208&seasonnegeri_id=',
+        trendBalik: 'https://infobencanajkmv2.jkm.gov.my/api/data-dashboard-aliran-trend-balik.php?a=0&b=1&seasonmain_id=208&seasonnegeri_id=',
+        tablePPS: 'https://infobencanajkmv2.jkm.gov.my/api/data-dashboard-table-pps.php?a=0&b=1&seasonmain_id=208&seasonnegeri_id=',
+        pusatBuka: 'https://infobencanajkmv2.jkm.gov.my/api/pusat-buka.php?a=0&b=1'
+    };
 
     // Function to format numbers with commas
     function formatNumber(num) {
@@ -45,128 +50,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Date(dateString).toLocaleDateString('ms-MY', options);
     }
 
-    // Function to update the dashboard
-    async function updateDashboard() {
-        try {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-
-            // Update last updated time
-            const lastUpdated = document.getElementById('lastUpdated');
-            lastUpdated.textContent = formatDate(data.data[0].created_at);
-
-            // Calculate totals
-            let totalMangsa = 0;
-            let totalPPS = 0;
-            let totalKeluarga = 0;
-            const locationData = {};
-
-            data.data.forEach(item => {
-                totalMangsa += parseInt(item.jumlah_mangsa) || 0;
-                totalPPS += parseInt(item.jumlah_pps) || 0;
-                totalKeluarga += parseInt(item.jumlah_keluarga) || 0;
-
-                // Aggregate data by location
-                if (!locationData[item.negeri]) {
-                    locationData[item.negeri] = {
-                        pps: 0,
-                        mangsa: 0,
-                        keluarga: 0
-                    };
-                }
-                locationData[item.negeri].pps += parseInt(item.jumlah_pps) || 0;
-                locationData[item.negeri].mangsa += parseInt(item.jumlah_mangsa) || 0;
-                locationData[item.negeri].keluarga += parseInt(item.jumlah_keluarga) || 0;
-            });
-
-            // Update statistics
-            document.getElementById('totalMangsa').textContent = formatNumber(totalMangsa);
-            document.getElementById('totalPPS').textContent = formatNumber(totalPPS);
-            document.getElementById('totalKeluarga').textContent = formatNumber(totalKeluarga);
-
-            // Update table
-            const tableBody = document.getElementById('locationTable').getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = '';
-            
-            Object.entries(locationData).forEach(([location, stats]) => {
-                const row = tableBody.insertRow();
-                row.insertCell(0).textContent = location;
-                row.insertCell(1).textContent = formatNumber(stats.pps);
-                row.insertCell(2).textContent = formatNumber(stats.mangsa);
-                row.insertCell(3).textContent = formatNumber(stats.keluarga);
-            });
-
-            // Update chart
-            updateChart(data.data);
-
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    }
-
-    // Function to update the chart
-    function updateChart(data) {
-        const ctx = document.getElementById('trendsChart').getContext('2d');
+    // Function to create or update a chart
+    function createChart(canvasId, labels, datasets, title) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
         
-        // Process data for chart
-        const chartData = data.reduce((acc, item) => {
-            const date = new Date(item.created_at).toLocaleDateString();
-            if (!acc[date]) {
-                acc[date] = {
-                    mangsa: 0,
-                    keluarga: 0,
-                    pps: 0
-                };
-            }
-            acc[date].mangsa += parseInt(item.jumlah_mangsa) || 0;
-            acc[date].keluarga += parseInt(item.jumlah_keluarga) || 0;
-            acc[date].pps += parseInt(item.jumlah_pps) || 0;
-            return acc;
-        }, {});
-
-        // Create arrays for chart
-        const labels = Object.keys(chartData);
-        const mangsaData = labels.map(date => chartData[date].mangsa);
-        const keluargaData = labels.map(date => chartData[date].keluarga);
-        const ppsData = labels.map(date => chartData[date].pps);
-
         // Destroy existing chart if it exists
-        if (window.myChart) {
-            window.myChart.destroy();
+        if (window[canvasId]) {
+            window[canvasId].destroy();
         }
 
-        // Create new chart
-        window.myChart = new Chart(ctx, {
+        window[canvasId] = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [
-                    {
-                        label: 'Mangsa',
-                        data: mangsaData,
-                        borderColor: '#1a73e8',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Keluarga',
-                        data: keluargaData,
-                        borderColor: '#34a853',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'PPS',
-                        data: ppsData,
-                        borderColor: '#ea4335',
-                        tension: 0.1
-                    }
-                ]
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Trend Banjir'
+                        text: title
+                    },
+                    legend: {
+                        position: 'top'
                     }
                 },
                 scales: {
@@ -176,6 +83,137 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+    }
+
+    // Function to process trend data
+    function processTrendData(data) {
+        const chartData = data.reduce((acc, item) => {
+            const date = new Date(item.created_at).toLocaleDateString();
+            if (!acc[date]) {
+                acc[date] = {
+                    mangsa: 0,
+                    keluarga: 0
+                };
+            }
+            acc[date].mangsa += parseInt(item.jumlah_mangsa) || 0;
+            acc[date].keluarga += parseInt(item.jumlah_keluarga) || 0;
+            return acc;
+        }, {});
+
+        return {
+            labels: Object.keys(chartData),
+            mangsa: Object.values(chartData).map(d => d.mangsa),
+            keluarga: Object.values(chartData).map(d => d.keluarga)
+        };
+    }
+
+    // Function to update dashboard
+    async function updateDashboard() {
+        try {
+            // Fetch all data
+            const responses = await Promise.all([
+                fetch(API_URLS.trendMasuk),
+                fetch(API_URLS.trendBalik),
+                fetch(API_URLS.tablePPS),
+                fetch(API_URLS.pusatBuka)
+            ]);
+
+            const [trendMasukData, trendBalikData, tablePPSData, pusatBukaData] = await Promise.all(
+                responses.map(r => r.json())
+            );
+
+            // Update last updated time
+            const lastUpdated = document.getElementById('lastUpdated');
+            lastUpdated.textContent = formatDate(new Date().toISOString());
+
+            // Process trend data
+            const masukTrend = processTrendData(trendMasukData.data);
+            const balikTrend = processTrendData(trendBalikData.data);
+
+            // Update Masuk chart
+            createChart('trendMasukChart', masukTrend.labels, [
+                {
+                    label: 'Mangsa Masuk',
+                    data: masukTrend.mangsa,
+                    borderColor: '#1a73e8',
+                    tension: 0.1
+                },
+                {
+                    label: 'Keluarga Masuk',
+                    data: masukTrend.keluarga,
+                    borderColor: '#34a853',
+                    tension: 0.1
+                }
+            ], 'Trend Aliran Masuk');
+
+            // Update Balik chart
+            createChart('trendBalikChart', balikTrend.labels, [
+                {
+                    label: 'Mangsa Balik',
+                    data: balikTrend.mangsa,
+                    borderColor: '#ea4335',
+                    tension: 0.1
+                },
+                {
+                    label: 'Keluarga Balik',
+                    data: balikTrend.keluarga,
+                    borderColor: '#fbbc04',
+                    tension: 0.1
+                }
+            ], 'Trend Aliran Balik');
+
+            // Calculate totals
+            const totalMasuk = trendMasukData.data.reduce((acc, item) => {
+                acc.mangsa += parseInt(item.jumlah_mangsa) || 0;
+                acc.keluarga += parseInt(item.jumlah_keluarga) || 0;
+                return acc;
+            }, { mangsa: 0, keluarga: 0 });
+
+            const totalBalik = trendBalikData.data.reduce((acc, item) => {
+                acc.mangsa += parseInt(item.jumlah_mangsa) || 0;
+                acc.keluarga += parseInt(item.jumlah_keluarga) || 0;
+                return acc;
+            }, { mangsa: 0, keluarga: 0 });
+
+            // Update statistics
+            document.getElementById('totalMangsa').textContent = formatNumber(totalMasuk.mangsa);
+            document.getElementById('mangsaMasuk').textContent = formatNumber(totalMasuk.mangsa);
+            document.getElementById('mangsaBalik').textContent = formatNumber(totalBalik.mangsa);
+
+            document.getElementById('totalKeluarga').textContent = formatNumber(totalMasuk.keluarga);
+            document.getElementById('keluargaMasuk').textContent = formatNumber(totalMasuk.keluarga);
+            document.getElementById('keluargaBalik').textContent = formatNumber(totalBalik.keluarga);
+
+            // Process PPS data
+            const ppsStats = pusatBukaData.data.reduce((acc, item) => {
+                if (item.status === 'Buka') acc.aktif++;
+                else if (item.status === 'Tutup') acc.tutup++;
+                return acc;
+            }, { aktif: 0, tutup: 0 });
+
+            document.getElementById('totalPPS').textContent = formatNumber(ppsStats.aktif + ppsStats.tutup);
+            document.getElementById('ppsAktif').textContent = formatNumber(ppsStats.aktif);
+            document.getElementById('ppsTutup').textContent = formatNumber(ppsStats.tutup);
+
+            // Update PPS table
+            const tableBody = document.getElementById('ppsTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            
+            pusatBukaData.data.forEach(pps => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = pps.negeri;
+                row.insertCell(1).textContent = pps.daerah;
+                row.insertCell(2).textContent = pps.nama_pps;
+                row.insertCell(3).textContent = formatNumber(pps.jumlah_mangsa);
+                row.insertCell(4).textContent = formatNumber(pps.jumlah_keluarga);
+                const statusCell = row.insertCell(5);
+                statusCell.textContent = pps.status;
+                statusCell.className = pps.status.toLowerCase();
+            });
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
     }
 
     // Initial update
