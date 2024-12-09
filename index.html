@@ -3,46 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Simple Website</title>
+    <title>Banjir Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
         <nav>
-            <h1>Welcome</h1>
-            <ul>
-                <li><a href="#home">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
+            <h1>Banjir Dashboard</h1>
+            <div class="last-updated">Last Updated: <span id="lastUpdated"></span></div>
         </nav>
     </header>
 
     <main>
-        <section id="home" class="hero">
-            <h2>Welcome to My Website</h2>
-            <p>This is a simple and modern website template.</p>
-            <button id="cta-button">Learn More</button>
-        </section>
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Total Mangsa</h2>
+                <div class="stat" id="totalMangsa">Loading...</div>
+            </div>
+            <div class="card">
+                <h2>Jumlah PPS</h2>
+                <div class="stat" id="totalPPS">Loading...</div>
+            </div>
+            <div class="card">
+                <h2>Jumlah Keluarga</h2>
+                <div class="stat" id="totalKeluarga">Loading...</div>
+            </div>
+        </div>
 
-        <section id="about">
-            <h2>About Us</h2>
-            <p>We are a creative team dedicated to building amazing web experiences.</p>
-        </section>
+        <div class="chart-container">
+            <canvas id="trendsChart"></canvas>
+        </div>
 
-        <section id="contact">
-            <h2>Contact Us</h2>
-            <form id="contact-form">
-                <input type="text" placeholder="Your Name" required>
-                <input type="email" placeholder="Your Email" required>
-                <textarea placeholder="Your Message" required></textarea>
-                <button type="submit">Send Message</button>
-            </form>
-        </section>
+        <div class="data-table">
+            <h2>Data by Location</h2>
+            <table id="locationTable">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>PPS</th>
+                        <th>Mangsa</th>
+                        <th>Keluarga</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
     </main>
 
     <footer>
-        <p>&copy; 2024 My Simple Website. All rights reserved.</p>
+        <p>&copy; 2024 Banjir Dashboard. Data provided by JKM Malaysia</p>
     </footer>
 
     <script src="script.js"></script>
